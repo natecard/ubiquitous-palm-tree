@@ -45,7 +45,7 @@ else:
     # Save tokenizer
     tokenizer.save("tokenizer-data/token-wiki.json")
 
-output = tokenizer.encode("Hello, y'all! How are you?")
+output = tokenizer.encode(sequence="Hello, y'all! How are you?")
 print(output.tokens)
 print(output.ids)
 
@@ -63,8 +63,8 @@ tokenizer.post_processor = TemplateProcessing(
     ],
 )
 
-output = tokenizer.encode("Hello, y'all! How are you?")
-print(f"Second: {output.tokens}")
+output2 = tokenizer.encode(sequence="Hello, y'all! How are you?")
+print(f"Second: {output2.tokens}")
 # word_freqs = defaultdict(int)
 # for text in files:
 #     words_with_offsets = tokenizer.backend_tokenizer.pre_tokenizer.pre_tokenize_str(
