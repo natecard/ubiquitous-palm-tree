@@ -19,7 +19,7 @@ normalizer = normalizers.Sequence([NFD(), Lowercase(), StripAccents()])
 # Init pre_tokenizer remove whitespace only
 pre_tokenizer = Whitespace()
 # Init BPE trainer, include vocab size
-trainer = BpeTrainer(special_tokens=["[UNK]", "[CLS]", "[SEP]", "[MASK]"])
+trainer = BpeTrainer(special_tokens=["[UNK]", "[CLS]", "[SEP]", "[PAD]", "[MASK]"])
 # dataset.set_format(
 #     type="torch", columns=["input_ids", "token_type_ids", "attention_mask", "labels"]
 # )
@@ -32,33 +32,39 @@ def file_exists(filepath):
 # Usage
 print(file_exists("./training_data/wiki.test.raw"))  # Replace with your file path
 
-
-files = [
-    os.path.abspath(f"./training_data/wiki.{split}.raw")
-    for split in ["test", "train", "valid"]
-]
-# files = [f"../training_data/wiki.{split}.raw" for split in ["test", "train", "valid"]]
-tokenizer.train(files=files, trainer=trainer)
-# Save tokenizer
-tokenizer.save("tokenizer-data/token-wiki.json")
+if file_exists("./tokenizer-data/token-wiki.json"):
+    tokenizer = Tokenizer.from_file("tokenizer-data/token-wiki.json")
+    print("Tokenizer loaded")
+else:
+    files = [
+        os.path.abspath(f"./training_data/wiki.{split}.raw")
+        for split in ["test", "train", "valid"]
+    ]
+    # files = [f"../training_data/wiki.{split}.raw" for split in ["test", "train", "valid"]]
+    tokenizer.train(files=files, trainer=trainer)
+    # Save tokenizer
+    tokenizer.save("tokenizer-data/token-wiki.json")
 
 output = tokenizer.encode("Hello, y'all! How are you?")
 print(output.tokens)
+print(output.ids)
 
 tokenizer.token_to_id("[SEP]")
 # def tokenization(example):
 #     return tokenizer(example["text"])
 # dataset = dataset.map(tokenization, batched=True)
 
-# tokenizer.post_processor = TemplateProcessing(
-#     single="[CLS] $A [SEP]",
-#     pair="[CLS] $A [SEP] $B:1 [SEP]:1",
-#     special_tokens=[
-#         ("[CLS]", 1),
-#         ("[SEP]", 2),
-#     ],
-# )
+tokenizer.post_processor = TemplateProcessing(
+    single="[CLS] $A [SEP]",
+    pair="[CLS] $A [SEP] $B:1 [SEP]:1",
+    special_tokens=[
+        ("[CLS]", 1),
+        ("[SEP]", 2),
+    ],
+)
 
+output = tokenizer.encode("Hello, y'all! How are you?")
+print(f"Second: {output.tokens}")
 # word_freqs = defaultdict(int)
 # for text in files:
 #     words_with_offsets = tokenizer.backend_tokenizer.pre_tokenizer.pre_tokenize_str(
