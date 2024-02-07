@@ -14,13 +14,13 @@ tokenizer = AutoTokenizer.from_pretrained(
     "deepseek-ai/deepseek-coder-6.7b-instruct",
     trust_remote_code=True,
 )
+# choosing either this model, llama 2 7b, or mistral 7b
 model = AutoModelForCausalLM.from_pretrained(
-    # choosing either this model, llama 2 7b, or mistral 7b
     "deepseek-ai/deepseek-coder-6.7b-instruct",
     trust_remote_code=True,
-    load_in_4bit=True,
     device_map="auto",
 )
+# load_in_4bit=True,
 tokenizer = AutoTokenizer.from_pretrained(model)
 pipeline = transformers.pipeline(
     "text-generation",
@@ -34,7 +34,7 @@ sequences = pipeline(
     prompt,
     do_sample=True,
     top_k=10,
-    temperature=0.1,
+    temperature=0.8,
     top_p=0.95,
     num_return_sequences=1,
     eos_token_id=tokenizer.eos_token_id,
