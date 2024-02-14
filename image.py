@@ -8,13 +8,15 @@ import torch
 vae = AutoencoderKL.from_pretrained(
     "madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16
 )
-#
+
+
 pipeline = DiffusionPipeline.from_pretrained(
-    "stabilityai/stable-diffusion-xl-base-1.0",
+    "stabilityai/sdxl-turbo",
     torch_dtype=torch.float16,
     variant="fp16",
     use_safetensors=True,
 ).to("mps")
+
 # Refiner model for XL pipeline (better quality & optional, but slower)
 refiner = DiffusionPipeline.from_pretrained(
     "stabilityai/stable-diffusion-xl-refiner-1.0",
@@ -35,9 +37,11 @@ refiner = DiffusionPipeline.from_pretrained(
 # Used to reduce GPU memory usage
 # pipeline.enable_sequential_cpu_offload()
 # Used to reduce memory overhead
-pipeline.enable_attention_slicing("max")
+# pipeline.enable_attention_slicing("max")
 
-prompt = "An elephant stepping over a mouse to avoid it"
+prompt = (
+    input("Enter a prompt: ") or "A painting of an elephant in the style of Picasso."
+)
 
 n_steps = 40
 high_noise_frac = 0.7
@@ -45,17 +49,15 @@ high_noise_frac = 0.7
 image = pipeline(
     prompt=prompt,
     num_inference_steps=n_steps,
-    denoising_end=high_noise_frac,
     output_type="latent",
 ).images
 
 image = refiner(
     prompt=prompt,
     num_inference_steps=n_steps,
-    denoising_start=high_noise_frac,
     image=image,
 ).images[0]
 
 image
 
-image.save("elephant.png")
+image.save(f"{prompt[0:6]}.png")
