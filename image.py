@@ -6,6 +6,24 @@ from diffusers import DiffusionPipeline, AutoencoderKL
 from DeepCache import DeepCacheSDHelper
 import torch
 
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+elif torch.version.hip:
+    device = torch.device("hip")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    if not torch.backends.mps.is_built():
+        print(
+            "MPS not available because the current PyTorch install was not "
+            "built with MPS enabled."
+        )
+    else:
+        print(
+            "MPS not available because the current MacOS version is not 12.3+ "
+            "and/or you do not have an MPS-enabled device on this machine."
+        )
+    device = torch.device("cpu")
 
 vae = AutoencoderKL.from_pretrained(
     "madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16
@@ -22,9 +40,9 @@ pipeline = DiffusionPipeline.from_pretrained(
     "segmind/SSD-1B",
     torch_dtype=torch.float16,
     variant="fp16",
-    vae=vae,
     use_safetensors=True,
-).to("mps")
+).to(device)
+
 helper = DeepCacheSDHelper(pipe=pipeline)
 helper.set_params(
     cache_interval=5,
@@ -44,7 +62,7 @@ refiner = DiffusionPipeline.from_pretrained(
     torch_dtype=torch.float16,
     use_safetensors=True,
     variant="fp16",
-).to("mps")
+).to(device)
 
 
 # Used to reduce GPU memory usage when using CUDA
@@ -55,10 +73,12 @@ refiner = DiffusionPipeline.from_pretrained(
 prompt = (
     input("Enter a prompt: ") or "A painting of an elephant in the style of Picasso."
 )
-neg_prompt = (
-    input("Enter a negative prompt: ")
-    or "follow the prompted image as closely as possible."
-)
+# Uncomment to use a negative prompt
+# neg_prompt = (
+#     input("Enter a negative prompt: ")
+#     or "follow the prompted image as closely as possible."
+# )
+
 # Number of inference steps
 n_steps = 50
 # For SDXL to denoise the image
@@ -66,10 +86,11 @@ n_steps = 50
 
 image = pipeline(
     prompt=prompt,
-    negative_prompt=neg_prompt,
+    # negative_prompt=neg_prompt,
+    # Uncomment if using refiner model
+    output_type="latent",
     # If swapped to SDXL Turbo, use the following lines
     # num_inference_steps=n_steps,
-    # output_type="image",
     # change next line to images[0] if not using the refiner model
 ).images
 
