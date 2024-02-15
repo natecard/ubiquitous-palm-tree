@@ -1,8 +1,8 @@
 # Investigating the use of the stable-diffusion-xl-base-1.0 model for image generation
 # Also going to look at the SDXL Turbo model to compare, paying attention to memory and time usage
+from diffusers import DiffusionPipeline, AutoencoderKL
 from datetime import datetime
 import os
-from diffusers import DiffusionPipeline, AutoencoderKL
 from DeepCache import DeepCacheSDHelper
 import torch
 
@@ -34,10 +34,12 @@ test_dir = os.path.join("test_images")
 os.makedirs(test_dir, exist_ok=True)
 
 pipeline = DiffusionPipeline.from_pretrained(
+    # Uncomment to use the base model
+    # "stabilityai/stable-diffusion-xl-base-1.0",
     # Uncomment to use the SDXL Turbo model
-    # "stabilityai/sdxl-turbo",
-    # Comment out to use the SDXL Turbo model
-    "segmind/SSD-1B",
+    "stabilityai/sdxl-turbo",
+    # Uncomment to use the SSD-1B model
+    # "segmind/SSD-1B",
     torch_dtype=torch.float16,
     variant="fp16",
     use_safetensors=True,
@@ -49,6 +51,7 @@ helper.set_params(
     cache_branch_id=0,
 )
 helper.enable()
+
 # Torch._dynamo issues with MPS? (not sure)
 # pipeline.unet = torch.compile(pipeline.unet, mode="reduce-overhead", fullgraph=True)
 # Does not work with custom VAE
@@ -90,7 +93,7 @@ image = pipeline(
     # Uncomment if using refiner model
     output_type="latent",
     # If swapped to SDXL Turbo, use the following lines
-    # num_inference_steps=n_steps,
+    num_inference_steps=n_steps,
     # change next line to images[0] if not using the refiner model
 ).images
 
