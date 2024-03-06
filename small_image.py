@@ -7,24 +7,27 @@ from diffusers.pipelines.wuerstchen import DEFAULT_STAGE_C_TIMESTEPS
 from datetime import datetime
 import os
 import torch
+import torch._dynamo
+
+torch._dynamo.config.suppress_errors = True
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
-elif torch.version.hip:
-    device = torch.device("hip")
-elif torch.backends.mps.is_available():
-    device = torch.device("mps")
+# elif torch.version.hip:
+# device = torch.device("hip")
+# elif torch.backends.mps.is_available():
+# device = torch.device("mps")
 else:
-    if not torch.backends.mps.is_built():
-        print(
-            "MPS not available because the current PyTorch install was not "
-            "built with MPS enabled."
-        )
-    else:
-        print(
-            "MPS not available because the current MacOS version is not 12.3+ "
-            "and/or you do not have an MPS-enabled device on this machine."
-        )
+    # if not torch.backends.mps.is_built():
+    #     print(
+    #         "MPS not available because the current PyTorch install was not "
+    #         "built with MPS enabled."
+    #     )
+    # else:
+    #     print(
+    #         "MPS not available because the current MacOS version is not 12.3+ "
+    #         "and/or you do not have an MPS-enabled device on this machine."
+    #     )
     device = torch.device("cpu")
 
 # Directory to save the images
@@ -38,6 +41,13 @@ prior_pipeline = WuerstchenPriorPipeline.from_pretrained(
 decoder_pipeline = WuerstchenDecoderPipeline.from_pretrained(
     "warp-ai/wuerstchen", torch_dtype=torch.float16
 ).to(device)
+
+# prior_pipeline.prior = torch.compile(
+#     prior_pipeline.prior, mode="reduce-overhead", fullgraph=True
+# )
+# decoder_pipeline.decoder = torch.compile(
+#     decoder_pipeline.decoder, mode="reduce-overhead", fullgraph=True
+# )
 
 prompt = (
     input("Enter a prompt: ") or "A painting of an elephant in the style of Picasso."
@@ -54,7 +64,7 @@ num_inference_steps = n_steps
 prior_output = prior_pipeline(
     prompt=prompt,
     height=1024,
-    width=1536,
+    width=1024,
     timesteps=DEFAULT_STAGE_C_TIMESTEPS,
     negative_prompt=neg_prompt,
     guidance_scale=4.0,
