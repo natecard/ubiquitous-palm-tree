@@ -36,10 +36,10 @@ test_dir = os.path.join("test_images")
 os.makedirs(test_dir, exist_ok=True)
 
 prior_pipeline = WuerstchenPriorPipeline.from_pretrained(
-    "warp-ai/wuerstchen-prior", torch_dtype=torch.float16
+    "warp-ai/wuerstchen-prior", torch_dtype=torch.float32
 ).to(device)
 decoder_pipeline = WuerstchenDecoderPipeline.from_pretrained(
-    "warp-ai/wuerstchen", torch_dtype=torch.float16
+    "warp-ai/wuerstchen", torch_dtype=torch.float32
 ).to(device)
 
 # prior_pipeline.prior = torch.compile(
